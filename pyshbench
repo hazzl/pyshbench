@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+import subprocess
+import re
+import statistics
+import math
+import sys
+
+def run(prog, runs):
+	rlist = []
+	exp = re.compile(b"Nodes/second\s*: (\d+)")
+	for i in range(runs):
+		cap = subprocess.run([prog,"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+		res = int(exp.search(cap.stderr).group(1))
+		sys.stdout.write("\r%s %d: %d" % (prog,i+1,res))
+		sys.stdout.flush()
+		rlist.append(res)
+	return rlist
+
+runs = int(sys.argv[3])
+if (runs < 2):
+	exit("Statistics require at least two runs")
+base = run(sys.argv[1], runs)
+test = run(sys.argv[2], runs)
+print ("\nResult of ", runs, "runs")
+b_mean = statistics.mean(base)
+b_dev = statistics.stdev(base, b_mean)
+t_mean = statistics.mean(test)
+t_dev = statistics.stdev(test, t_mean)
+print ("Base nps: ", b_mean, " stdev: ", b_dev)
+print ("Test nps: ", t_mean, " stdev: ", t_dev)
+diff = (max(t_mean, b_mean)/min(t_mean, b_mean)-1)*100
+print ("Speed-up: ", ("+","-")[t_mean < b_mean]+str(round(diff,4))+"%")
+for i in range(len(base)):
+	test[i] = test[i] - base[i]
+t_mean = statistics.mean(test)
+t_dev = statistics.stdev(test,t_mean)
+p_val = .5+.5*math.erf(t_mean/t_dev/math.sqrt(2.0))
+print ("p-value:  ", round(p_val,4))
