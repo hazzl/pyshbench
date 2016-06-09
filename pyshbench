@@ -9,30 +9,46 @@ def run(prog, runs):
 	rlist = []
 	exp = re.compile(b"Nodes/second\s*: (\d+)")
 	for i in range(runs):
-		cap = subprocess.run([prog,"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-		res = int(exp.search(cap.stderr).group(1))
-		sys.stdout.write("\r%s %d: %d" % (prog,i+1,res))
-		sys.stdout.flush()
+		cap = subprocess.Popen([prog,"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+		res = int(exp.search(cap.stderr.read()).group(1))
+		print("%s %d: %d" % (prog,i+1,res))
 		rlist.append(res)
 	return rlist
 
+def erf_inv(x):
+	"""Inverse of math.erf()"""
+	a = 8 * (math.pi - 3) / (3 * math.pi*(4 - math.pi))
+	y = math.log(1 - x * x)
+	z = 2 / (math.pi * a) + y / 2
+	return math.copysign(math.sqrt(math.sqrt(z * z - y / a) - z), x)
+
+def CDF(q):
+	"""CDF of the standard Gaussian law"""
+	return 0.5 * (1 + math.erf(q / math.sqrt(2)))
+
+def Quantile(p):
+	"""Quantile function of the standard Gaussian law"""
+	assert(0 <= p and p <= 1)
+	return math.sqrt(2)*erf_inv(2*p-1)
+
+if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
+	exit("Usage:\n" + sys.argv[0] + "test base #runs\nwhere #runs >= 2")
+
 runs = int(sys.argv[3])
-if (runs < 2):
-	exit("Statistics require at least two runs")
+
 base = run(sys.argv[1], runs)
 test = run(sys.argv[2], runs)
-print ("\nResult of ", runs, "runs")
-b_mean = statistics.mean(base)
-b_dev = statistics.stdev(base, b_mean)
-t_mean = statistics.mean(test)
-t_dev = statistics.stdev(test, t_mean)
-print ("Base nps: ", b_mean, " stdev: ", b_dev)
-print ("Test nps: ", t_mean, " stdev: ", t_dev)
-diff = (max(t_mean, b_mean)/min(t_mean, b_mean)-1)*100
-print ("Speed-up: ", ("+","-")[t_mean < b_mean]+str(round(diff,4))+"%")
-for i in range(len(base)):
-	test[i] = test[i] - base[i]
-t_mean = statistics.mean(test)
-t_dev = statistics.stdev(test,t_mean)
-p_val = .5+.5*math.erf(t_mean/t_dev/math.sqrt(2.0))
-print ("p-value:  ", round(p_val,4))
+diff = [y - x for x, y in zip(base, test)]
+
+base_mean = statistics.mean(base)
+test_mean = statistics.mean(test)
+diff_mean = statistics.mean(diff)
+
+base_sdev = statistics.stdev(base, base_mean) / math.sqrt(runs)
+test_sdev = statistics.stdev(test, test_mean) / math.sqrt(runs)
+diff_sdev = statistics.stdev(diff, diff_mean) / math.sqrt(runs)
+
+print("base: ", base_mean, "+/-", Quantile(0.975) * base_sdev)
+print("test: ", test_mean, "+/-", Quantile(0.975) * test_sdev)
+print("diff: ", diff_mean, "+/-", Quantile(0.975) * diff_sdev)
+print("P(test > base) = ", CDF(diff_mean / diff_sdev))
