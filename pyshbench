@@ -15,6 +15,7 @@ if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
 base, test, diff = [], [], []
 runs = int(sys.argv[3])
 exp = re.compile(b"Nodes/second\s*: (\d+)")
+print("run\tbase\ttest\tdiff")
 
 for i in range(runs):
 	# Start both processes. This is non-blocking.
@@ -26,7 +27,7 @@ for i in range(runs):
 	test.append(int(exp.search(test_process.stderr.read()).group(1)))
 
 	diff.append(test[i] - base[i])
-	print("%d/%d:\tbase = %d\ttest = %d\tdiff = %d" % (i + 1, runs, base[i], test[i], diff[i]))
+	print("%d\t%d\t%d\t%d" % (i + 1, base[i], test[i], diff[i]))
 
 base_mean = statistics.mean(base)
 test_mean = statistics.mean(test)
@@ -36,7 +37,8 @@ base_sdev = statistics.stdev(base, base_mean) / math.sqrt(runs)
 test_sdev = statistics.stdev(test, test_mean) / math.sqrt(runs)
 diff_sdev = statistics.stdev(diff, diff_mean) / math.sqrt(runs)
 
-print("\nbase = ", base_mean, "+/-", 1.96 * base_sdev)
-print("test = ", test_mean, "+/-", 1.96 * test_sdev)
-print("diff = ", diff_mean, "+/-", 1.96 * diff_sdev)
-print("P(test > base) = ", CDF(diff_mean / diff_sdev))
+print("\nbase = %d +/- %d" % (base_mean, 1.96 * test_sdev))
+print("test = %d +/- %d" % (test_mean, 1.96 * test_sdev))
+print("diff = %d +/- %d" % (diff_mean, 1.96 * diff_sdev))
+print("\nspeedup = %.4f" % (diff_mean / base_mean))
+print("P(speedup > 0) = %.4f" % CDF(diff_mean / diff_sdev))
