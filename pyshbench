@@ -5,16 +5,6 @@ import statistics
 import math
 import sys
 
-def run(prog, runs):
-	rlist = []
-	exp = re.compile(b"Nodes/second\s*: (\d+)")
-	for i in range(runs):
-		cap = subprocess.Popen([prog,"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-		res = int(exp.search(cap.stderr.read()).group(1))
-		print("%s %d: %d" % (prog,i+1,res))
-		rlist.append(res)
-	return rlist
-
 def CDF(q):
 	"""CDF of the standard Gaussian law"""
 	return 0.5 * (1 + math.erf(q / math.sqrt(2)))
@@ -22,11 +12,21 @@ def CDF(q):
 if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
 	exit("Usage:\n" + sys.argv[0] + "test base #runs\nwhere #runs >= 2")
 
+base, test, diff = [], [], []
 runs = int(sys.argv[3])
+exp = re.compile(b"Nodes/second\s*: (\d+)")
 
-base = run(sys.argv[1], runs)
-test = run(sys.argv[2], runs)
-diff = [y - x for x, y in zip(base, test)]
+for i in range(runs):
+	# Start both processes. This is non-blocking.
+	base_process = subprocess.Popen([sys.argv[1],"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+	test_process = subprocess.Popen([sys.argv[2],"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+	# Wait for processes to finish and grep nps results in their stderr output
+	base.append(int(exp.search(base_process.stderr.read()).group(1)))
+	test.append(int(exp.search(test_process.stderr.read()).group(1)))
+
+	diff.append(test[i] - base[i])
+	print("%d/%d:\tbase = %d\ttest = %d\tdiff = %d" % (i + 1, runs, base[i], test[i], diff[i]))
 
 base_mean = statistics.mean(base)
 test_mean = statistics.mean(test)
@@ -36,7 +36,7 @@ base_sdev = statistics.stdev(base, base_mean) / math.sqrt(runs)
 test_sdev = statistics.stdev(test, test_mean) / math.sqrt(runs)
 diff_sdev = statistics.stdev(diff, diff_mean) / math.sqrt(runs)
 
-print("base: ", base_mean, "+/-", 1.96 * base_sdev)
-print("test: ", test_mean, "+/-", 1.96 * test_sdev)
-print("diff: ", diff_mean, "+/-", 1.96 * diff_sdev)
+print("\nbase = ", base_mean, "+/-", 1.96 * base_sdev)
+print("test = ", test_mean, "+/-", 1.96 * test_sdev)
+print("diff = ", diff_mean, "+/-", 1.96 * diff_sdev)
 print("P(test > base) = ", CDF(diff_mean / diff_sdev))
