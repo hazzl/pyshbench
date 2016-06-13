@@ -49,7 +49,7 @@ base_sdev = statistics.stdev(base, base_mean) / math.sqrt(runs)
 test_sdev = statistics.stdev(test, test_mean) / math.sqrt(runs)
 diff_sdev = statistics.stdev(diff, diff_mean) / math.sqrt(runs)
 
-print("\nbase = %d +/- %d" % (base_mean, Quantile(0.975) * test_sdev))
+print("\nbase = %d +/- %d" % (base_mean, Quantile(0.975) * base_sdev))
 print("test = %d +/- %d" % (test_mean, Quantile(0.975) * test_sdev))
 print("diff = %d +/- %d" % (diff_mean, Quantile(0.975) * diff_sdev))
 print("\nspeedup = %.4f" % (diff_mean / base_mean))
