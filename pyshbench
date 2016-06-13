@@ -5,9 +5,21 @@ import statistics
 import math
 import sys
 
+def erf_inv(x):
+	"""Inverse of math.erf()"""
+	a = 8 * (math.pi - 3) / (3 * math.pi*(4 - math.pi))
+	y = math.log(1 - x * x)
+	z = 2 / (math.pi * a) + y / 2
+	return math.copysign(math.sqrt(math.sqrt(z * z - y / a) - z), x)
+
 def CDF(q):
 	"""CDF of the standard Gaussian law"""
 	return 0.5 * (1 + math.erf(q / math.sqrt(2)))
+
+def Quantile(p):
+	"""Quantile function of the standard Gaussian law"""
+	assert(0 <= p and p <= 1)
+	return math.sqrt(2)*erf_inv(2*p-1)
 
 if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
 	exit("Usage:\n" + sys.argv[0] + "test base #runs\nwhere #runs >= 2")
@@ -37,8 +49,8 @@ base_sdev = statistics.stdev(base, base_mean) / math.sqrt(runs)
 test_sdev = statistics.stdev(test, test_mean) / math.sqrt(runs)
 diff_sdev = statistics.stdev(diff, diff_mean) / math.sqrt(runs)
 
-print("\nbase = %d +/- %d" % (base_mean, 1.96 * test_sdev))
-print("test = %d +/- %d" % (test_mean, 1.96 * test_sdev))
-print("diff = %d +/- %d" % (diff_mean, 1.96 * diff_sdev))
+print("\nbase = %d +/- %d" % (base_mean, Quantile(0.975) * test_sdev))
+print("test = %d +/- %d" % (test_mean, Quantile(0.975) * test_sdev))
+print("diff = %d +/- %d" % (diff_mean, Quantile(0.975) * diff_sdev))
 print("\nspeedup = %.4f" % (diff_mean / base_mean))
 print("P(speedup > 0) = %.4f" % CDF(diff_mean / diff_sdev))
