@@ -4,6 +4,8 @@ import re
 import statistics
 import math
 import sys
+import platform
+import os.path
 
 def erf_inv(x):
 	"""Inverse of math.erf()"""
@@ -54,3 +56,17 @@ print("test = {:>10n}  +/- {:n}".format(round(test_mean), round(Quantile(0.975) 
 print("diff = {:>+10n}  +/- {:n}".format(round(diff_mean), round(Quantile(0.975) * diff_sdev)))
 print("\nspeedup        = {:>+6.4f}".format(diff_mean / base_mean))
 print("P(speedup > 0) = {:>7.4f}".format(CDF(diff_mean / diff_sdev)))
+
+cpu = platform.processor()
+if cpu == "":
+	if os.path.exists("/proc/cpuinfo"):
+		exp = re.compile ("^model name\s+:\s+(.*)$")
+		with open('/proc/cpuinfo','r') as infile:
+			for line in infile:
+				m = exp.match(line)
+				if m:
+					cpu = m.group(1)
+					break
+if cpu == "":
+	cpu = "unknown"
+print ("\nCPU:",cpu)
