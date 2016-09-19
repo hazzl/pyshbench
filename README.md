@@ -19,4 +19,4 @@ p-value:   0.224
 ```
 
 ##To Do
-  - add concurrency
+  - run tasks sequentially when there is just one physical core 
