@@ -30,21 +30,24 @@ if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
 base, test, diff = [], [], []
 runs = int(sys.argv[3])
 exp = re.compile(b"Nodes/second\s*: (\d+)")
+
 # determine CPU sets to run on
 # this assumes that logical cpus on the same core are numbered sequentially
 num_cores = psutil.cpu_count(logical=False)
 num_cpus = psutil.cpu_count()
 cpu_step = int(num_cpus / num_cores)
-cpu_setA = list(range(0, num_cpus, cpu_step*2))
-cpu_setB = list(range(cpu_step, num_cpus, cpu_step*2))
+cpuset = []
+cpuset.append(list(range(0, num_cpus, cpu_step*2)))
+cpuset.append(list(range(cpu_step, num_cpus, cpu_step*2)))
+
 print("{:>3} {:>10} {:>10} {:>8}".format("run","base","test","diff"))
 
 for i in range(runs):
 	# Start both processes. This is non-blocking.
 	base_process = subprocess.Popen([sys.argv[1],"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-	psutil.Process(base_process.pid).cpu_affinity(cpu_setA)
+	psutil.Process(base_process.pid).cpu_affinity(cpuset[i%2])
 	test_process = subprocess.Popen([sys.argv[2],"bench"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-	psutil.Process(test_process.pid).cpu_affinity(cpu_setB)
+	psutil.Process(test_process.pid).cpu_affinity(cpuset[(i+1)%2])
 
 	# Wait for processes to finish and grep nps results in their stderr output
 	base.append(int(exp.search(base_process.stderr.read()).group(1)))
