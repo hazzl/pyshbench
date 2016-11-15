@@ -24,6 +24,12 @@ def Quantile(p):
 	assert(0 <= p and p <= 1)
 	return math.sqrt(2)*erf_inv(2*p-1)
 
+def rightstr(s, l):
+	if len(s) > l:
+		return "..."+s[3-l:]
+	else:
+		return s
+
 if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
 	exit("Usage:\n" + sys.argv[0] + " base test #runs\nwhere #runs >= 2")
 
@@ -64,9 +70,9 @@ base_sdev = statistics.stdev(base, base_mean) / math.sqrt(runs)
 test_sdev = statistics.stdev(test, test_mean) / math.sqrt(runs)
 diff_sdev = statistics.stdev(diff, diff_mean) / math.sqrt(runs)
 print("\nResult of {:3n} runs\n==================".format(runs))
-print("base = {:>10n}  +/- {:n}".format(round(base_mean), round(Quantile(0.975) * base_sdev)))
-print("test = {:>10n}  +/- {:n}".format(round(test_mean), round(Quantile(0.975) * test_sdev)))
-print("diff = {:>+10n}  +/- {:n}".format(round(diff_mean), round(Quantile(0.975) * diff_sdev)))
+print("base ({:<15s}) = {:>10n}  +/- {:n}".format(rightstr(sys.argv[1],15), round(base_mean), round(Quantile(0.975) * base_sdev)))
+print("test ({:<15s}) = {:>10n}  +/- {:n}".format(rightstr(sys.argv[2],15), round(test_mean), round(Quantile(0.975) * test_sdev)))
+print("{:22s} = {:>+10n}  +/- {:n}".format("diff", round(diff_mean), round(Quantile(0.975) * diff_sdev)))
 print("\nspeedup        = {:>+6.4f}".format(diff_mean / base_mean))
 print("P(speedup > 0) = {:>7.4f}".format(CDF(diff_mean / diff_sdev)))
 
