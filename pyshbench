@@ -25,7 +25,7 @@ def Quantile(p):
 	return math.sqrt(2)*erf_inv(2*p-1)
 
 if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
-	exit("Usage:\n" + sys.argv[0] + "test base #runs\nwhere #runs >= 2")
+	exit("Usage:\n" + sys.argv[0] + " base test #runs\nwhere #runs >= 2")
 
 base, test, diff = [], [], []
 runs = int(sys.argv[3])
