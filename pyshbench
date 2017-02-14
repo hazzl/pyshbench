@@ -43,9 +43,11 @@ num_cores = psutil.cpu_count(logical=False)
 num_cpus = psutil.cpu_count()
 cpu_step = int(num_cpus / num_cores)
 cpuset = []
-cpuset.append(list(range(0, num_cpus, cpu_step*2)))
-cpuset.append(list(range(cpu_step, num_cpus, cpu_step*2)))
-
+cpuset.append(list())
+cpuset.append(list())
+for i in range(0, cpu_step):
+	cpuset[0].extend(list(range(i, num_cpus, cpu_step*2)))
+	cpuset[1].extend(list(range(i+cpu_step, num_cpus, cpu_step*2)))
 print("{:>3} {:>10} {:>10} {:>8}".format("run","base","test","diff"))
 
 for i in range(runs):
