@@ -35,7 +35,7 @@ if (len(sys.argv) != 4 or int(sys.argv[3]) < 2):
 
 base, test, diff = [], [], []
 runs = int(sys.argv[3])
-exp = re.compile(b"Nodes/second\s*: (\d+)")
+exp = re.compile(br"Nodes/second\s*: (\d+)")
 
 # determine CPU sets to run on
 # this assumes that logical cpus on the same core are numbered sequentially
@@ -80,7 +80,7 @@ print("P(speedup > 0) = {:>7.4f}".format(CDF(diff_mean / diff_sdev)))
 
 cpu = str()
 if os.path.exists("/proc/cpuinfo"):
-	exp = re.compile ("^model name\s+:\s+(.*)$")
+	exp = re.compile (r"^model name\s+:\s+(.*)$")
 	with open('/proc/cpuinfo','r') as infile:
 		for line in infile:
 			m = exp.match(line)
